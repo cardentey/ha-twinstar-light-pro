@@ -1,4 +1,4 @@
-"""Cliente BLE centralizado para Twinstar."""
+"""Centralized BLE client for Twinstar."""
 from __future__ import annotations
 
 import asyncio
@@ -14,10 +14,10 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class TwinstarBLEClient:
-    """Gestiona la conexión BLE con una lámpara Twinstar.
+    """Manage the BLE connection to a Twinstar lamp.
 
-    Serializa todas las operaciones BLE con un asyncio.Lock() para evitar
-    colisiones cuando múltiples automatizaciones envían comandos a la vez.
+    Serializes all BLE operations with an asyncio.Lock() to avoid
+    collisions when multiple automations send commands at the same time.
     """
 
     def __init__(self, hass: HomeAssistant, mac_address: str) -> None:
@@ -27,20 +27,20 @@ class TwinstarBLEClient:
 
     @property
     def mac_address(self) -> str:
-        """Retorna la dirección MAC del dispositivo."""
+        """Return the device's MAC address."""
         return self._mac
 
     async def send_commands(
         self, commands: list[bytes | bytearray | str], delay: float = 0.1
     ) -> bool:
-        """Envía una secuencia de comandos BLE en una sola conexión.
+        """Send a sequence of BLE commands over a single connection.
 
         Args:
-            commands: Lista de comandos (bytes, bytearray o str).
-            delay: Pausa en segundos entre cada comando.
+            commands: List of commands (bytes, bytearray or str).
+            delay: Pause in seconds between each command.
 
         Returns:
-            True si todos los comandos se enviaron correctamente.
+            True if all commands were sent successfully.
         """
         async with self._lock:
             ble_device = async_ble_device_from_address(
@@ -48,7 +48,7 @@ class TwinstarBLEClient:
             )
             if not ble_device:
                 _LOGGER.error(
-                    "Twinstar (%s) fuera de alcance Bluetooth", self._mac
+                    "Twinstar (%s) out of Bluetooth range", self._mac
                 )
                 return False
 
@@ -71,25 +71,25 @@ class TwinstarBLEClient:
                 return True
             except Exception as err:
                 _LOGGER.error(
-                    "Error BLE Twinstar (%s): %s", self._mac, err
+                    "Twinstar BLE error (%s): %s", self._mac, err
                 )
                 return False
 
     async def send_command(self, command: bytes | bytearray | str) -> bool:
-        """Envía un solo comando BLE."""
+        """Send a single BLE command."""
         if isinstance(command, str):
             command = command.encode("utf-8")
         return await self.send_commands([command])
 
     async def async_read_power_status(self) -> bool | None:
-        """Consulta el estado físico de encendido (ON/OFF) mediante lectura GATT."""
+        """Query the physical power state (ON/OFF) via a GATT read."""
         async with self._lock:
             ble_device = async_ble_device_from_address(
                 self._hass, self._mac, connectable=True
             )
             if not ble_device:
                 _LOGGER.debug(
-                    "Twinstar (%s) fuera de alcance para consultar estado", self._mac
+                    "Twinstar (%s) out of range for status query", self._mac
                 )
                 return None
 
@@ -107,7 +107,7 @@ class TwinstarBLEClient:
                     data = await client.read_gatt_char(READ_UUID)
                     text = data.decode("utf-8", errors="ignore").strip().upper()
                     _LOGGER.debug(
-                        "Estado GATT Twinstar (%s): '%s' (raw: %s)",
+                        "Twinstar GATT state (%s): '%s' (raw: %s)",
                         self._mac,
                         text,
                         data.hex(),
@@ -121,7 +121,7 @@ class TwinstarBLEClient:
                     await client.disconnect()
             except Exception as err:
                 _LOGGER.debug(
-                    "No se pudo leer estado BLE de Twinstar (%s): %s", self._mac, err
+                    "Could not read Twinstar BLE state (%s): %s", self._mac, err
                 )
                 return None
 

@@ -1,4 +1,4 @@
-"""Interruptor inteligente para Twinstar."""
+"""Smart light switch for Twinstar."""
 from __future__ import annotations
 
 import logging
@@ -27,7 +27,7 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    """Configura la entidad light desde una entrada de configuración."""
+    """Set up the light entity from a config entry."""
     runtime_data = entry.runtime_data
     mac_address = runtime_data.mac_address
     ble_client = runtime_data.ble_client
@@ -40,7 +40,7 @@ async def async_setup_entry(
 
 
 class TwinstarLight(LightEntity, RestoreEntity):
-    """Representa una lámpara de acuario Twinstar."""
+    """Represents a Twinstar aquarium lamp."""
 
     def __init__(
         self,
@@ -51,7 +51,9 @@ class TwinstarLight(LightEntity, RestoreEntity):
         self._entry = entry
         self._mac = mac_address
         self._ble_client = ble_client
-        self._attr_name = "Acuario Twinstar"
+        self._attr_has_entity_name = True
+        # None = use the (translated) device name as the light's name
+        self._attr_name = None
         self._attr_unique_id = f"twinstar_light_{mac_address}"
         self._attr_supported_color_modes = {ColorMode.ONOFF}
         self._attr_color_mode = ColorMode.ONOFF
@@ -60,67 +62,67 @@ class TwinstarLight(LightEntity, RestoreEntity):
 
     @property
     def device_info(self) -> DeviceInfo:
-        """Retorna información del dispositivo (compartida con number.py)."""
+        """Return device info (shared with number.py)."""
         return get_device_info(self._mac)
 
-    # --- Restauración de estado al reiniciar ---
+    # --- State restore on restart ---
 
     async def async_added_to_hass(self) -> None:
-        """Restaura el estado de encendido/apagado tras reiniciar."""
+        """Restore the on/off state after a restart."""
         await super().async_added_to_hass()
 
         last_state = await self.async_get_last_state()
         if last_state and last_state.state == STATE_ON:
             self._is_on = True
-            _LOGGER.debug("Memoria restaurada: La lámpara Twinstar vuelve a estado ON")
+            _LOGGER.debug("State restored: Twinstar lamp returns to ON")
 
-        # Registramos la entidad en runtime_data para que __init__.py la encuentre
+        # Register the entity in runtime_data so __init__.py can find it
         runtime_data = getattr(self._entry, "runtime_data", None)
         if runtime_data is not None:
             runtime_data.entities[self._mac] = self
 
-        # Programar lectura inicial del estado físico real tras arrancar
+        # Schedule an initial read of the real physical state after startup
         self.hass.async_create_background_task(
             self.async_update_power_status(),
             name=f"twinstar_status_init_{self._mac}",
         )
 
     async def async_will_remove_from_hass(self) -> None:
-        """Limpia la referencia al eliminar la entidad."""
+        """Clean up the reference when the entity is removed."""
         runtime_data = getattr(self._entry, "runtime_data", None)
         if runtime_data is not None:
             runtime_data.entities.pop(self._mac, None)
         await super().async_will_remove_from_hass()
 
-    # --- Estado ---
+    # --- State ---
 
     @property
     def is_on(self) -> bool:
-        """Retorna si la luz está encendida."""
+        """Return whether the light is on."""
         return self._is_on
 
     def set_is_on(self, state: bool) -> None:
-        """Actualiza el estado on/off desde servicios externos (send_command, etc.)."""
+        """Update the on/off state from external services (send_command, etc.)."""
         self._is_on = state
         self.async_write_ha_state()
 
     async def async_update_power_status(self) -> None:
-        """Consulta por Bluetooth si la lámpara está física y realmente encendida o apagada."""
+        """Query over Bluetooth whether the lamp is actually, physically on or off."""
         status = await self._ble_client.async_read_power_status()
         if status is not None and status != self._is_on:
             _LOGGER.info(
-                "Twinstar (%s): Estado físico actualizado a %s (anterior en HA: %s)",
+                "Twinstar (%s): Physical state updated to %s (previous in HA: %s)",
                 self._mac,
-                "ENCENDIDO" if status else "APAGADO",
-                "ENCENDIDO" if self._is_on else "APAGADO",
+                "ON" if status else "OFF",
+                "ON" if self._is_on else "OFF",
             )
             self._is_on = status
             self.async_write_ha_state()
 
-    # --- Comandos ---
+    # --- Commands ---
 
     async def async_turn_on(self, **kwargs) -> None:
-        """Encendido normal: envía brillo + colores + ON."""
+        """Normal turn-on: send brightness + colors + ON."""
         commands = self._build_color_commands()
         commands.append(CMD_ON)
 
@@ -130,19 +132,19 @@ class TwinstarLight(LightEntity, RestoreEntity):
             self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs) -> None:
-        """Apaga la luz de forma segura."""
+        """Turn the light off safely."""
         success = await self._ble_client.send_commands([b"A0", CMD_OFF])
         if success:
             self._is_on = False
             self.async_write_ha_state()
 
-    # --- Utilidades ---
+    # --- Utilities ---
 
     def _build_color_commands(self) -> list[bytes]:
-        """Construye la lista de comandos de color leyendo entidades hermanas por device_id.
+        """Build the list of color commands by reading sibling entities by device_id.
 
-        Busca todas las entidades number del mismo device (por identifiers)
-        y extrae el prefijo de canal del unique_id (A, R, G, B, W).
+        Finds all number entities on the same device (by identifiers)
+        and extracts the channel prefix from the unique_id (A, R, G, B, W).
         """
         dev_reg = dr.async_get(self.hass)
         ent_reg = er.async_get(self.hass)
@@ -150,18 +152,18 @@ class TwinstarLight(LightEntity, RestoreEntity):
         device = dev_reg.async_get_device(identifiers={(DOMAIN, self._mac)})
         if not device:
             _LOGGER.warning(
-                "Twinstar: No se encontró el dispositivo para MAC %s", self._mac
+                "Twinstar: Device not found for MAC %s", self._mac
             )
             return []
 
         commands: list[bytes] = []
 
         for entity_entry in er.async_entries_for_device(ent_reg, device.id):
-            # Solo nos interesan las entidades number
+            # Only number entities are relevant
             if not entity_entry.entity_id.startswith("number."):
                 continue
 
-            # Extraer el prefijo del canal del unique_id: "twinstar_<mac>_<prefix>"
+            # Extract the channel prefix from the unique_id: "twinstar_<mac>_<prefix>"
             uid = entity_entry.unique_id or ""
             parts = uid.rsplit("_", 1)
             if len(parts) < 2:
@@ -171,7 +173,7 @@ class TwinstarLight(LightEntity, RestoreEntity):
             if prefix not in ("A", "R", "G", "B", "W"):
                 continue
 
-            # Leer el estado actual
+            # Read the current state
             state = self.hass.states.get(entity_entry.entity_id)
             if not state or state.state in ("unknown", "unavailable"):
                 continue

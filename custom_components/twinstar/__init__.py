@@ -1,4 +1,4 @@
-"""Inicialización de la integración Twinstar."""
+"""Twinstar integration setup."""
 from __future__ import annotations
 
 import logging
@@ -12,7 +12,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from datetime import timedelta
 from homeassistant.helpers.event import async_track_time_interval
 
-# Registros para buscar entidades por device_id
+# Registries used to look up entities by device_id
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import device_registry as dr
 
@@ -34,7 +34,7 @@ _LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class TwinstarRuntimeData:
-    """Datos en memoria compartidos entre plataformas de una misma entrada."""
+    """In-memory data shared between the platforms of a single config entry."""
 
     mac_address: str
     ble_client: TwinstarBLEClient
@@ -48,20 +48,20 @@ TwinstarConfigEntry = ConfigEntry[TwinstarRuntimeData]
 
 
 def _get_entry_runtime_data(entry: ConfigEntry) -> TwinstarRuntimeData | None:
-    """Obtiene runtime_data de forma segura."""
+    """Safely get runtime_data."""
     return getattr(entry, "runtime_data", None)
 
 
 def _parse_light_on_state(command: str | bytes | bytearray) -> bool | None:
-    """Detecta si un comando enciende o apaga la lámpara.
+    """Detect whether a command turns the lamp on or off.
 
-    Reconoce:
-      - CMD_ON / CMD_OFF (bytes directos)
-      - "on" / "off" (texto)
-      - "A<valor>" (brillo: A0 = off, A1+ = on)
+    Recognizes:
+      - CMD_ON / CMD_OFF (raw bytes)
+      - "on" / "off" (text)
+      - "A<value>" (brightness: A0 = off, A1+ = on)
 
     Returns:
-        True si enciende, False si apaga, None si no se puede determinar.
+        True if it turns on, False if it turns off, None if it cannot be determined.
     """
     if isinstance(command, (bytes, bytearray)):
         if command == bytes(CMD_ON) or command == CMD_ON:
@@ -78,13 +78,13 @@ def _parse_light_on_state(command: str | bytes | bytearray) -> bool | None:
 
     cleaned = command.strip().lower()
 
-    # Comandos literales "on" / "off"
+    # Literal "on" / "off" commands
     if cleaned in ("on", "on\x00"):
         return True
     if cleaned in ("off", "off\x00"):
         return False
 
-    # Comandos de brillo "A<valor>"
+    # Brightness commands "A<value>"
     upper = cleaned.upper()
     if upper.startswith("A"):
         try:
@@ -96,7 +96,7 @@ def _parse_light_on_state(command: str | bytes | bytearray) -> bool | None:
 
 
 def _get_twinstar_light_entity(hass: HomeAssistant, target_mac: str):
-    """Busca la entidad light registrada para una MAC."""
+    """Find the light entity registered for a MAC."""
     for loaded_entry in hass.config_entries.async_entries(DOMAIN):
         runtime_data = _get_entry_runtime_data(loaded_entry)
         if runtime_data is None:
@@ -108,7 +108,7 @@ def _get_twinstar_light_entity(hass: HomeAssistant, target_mac: str):
 
 
 def _get_ble_client_for_mac(hass: HomeAssistant, target_mac: str) -> TwinstarBLEClient | None:
-    """Obtiene el ble_client para una MAC determinada."""
+    """Get the ble_client for a given MAC."""
     for loaded_entry in hass.config_entries.async_entries(DOMAIN):
         runtime_data = _get_entry_runtime_data(loaded_entry)
         if runtime_data is None:
@@ -119,7 +119,7 @@ def _get_ble_client_for_mac(hass: HomeAssistant, target_mac: str) -> TwinstarBLE
 
 
 def _update_light_state_from_command(hass: HomeAssistant, target_mac: str, command: str) -> None:
-    """Actualiza el estado de la entidad light según el comando enviado."""
+    """Update the light entity's state based on the command sent."""
     entity = _get_twinstar_light_entity(hass, target_mac)
     if entity is None:
         return
@@ -129,8 +129,8 @@ def _update_light_state_from_command(hass: HomeAssistant, target_mac: str, comma
     entity.set_is_on(state)
 
 
-def _obtener_mac_destino(hass: HomeAssistant, call_data: dict) -> str | None:
-    """Busca la MAC a partir de entity_id, mac explícita o por defecto."""
+def _get_target_mac(hass: HomeAssistant, call_data: dict) -> str | None:
+    """Resolve the MAC from entity_id, an explicit mac, or the default."""
     target_mac = call_data.get("mac")
     entity_id = call_data.get("entity_id")
 
@@ -145,7 +145,7 @@ def _obtener_mac_destino(hass: HomeAssistant, call_data: dict) -> str | None:
                     if identifier[0] == DOMAIN:
                         return identifier[1]
 
-    # Si no pasaron MAC ni entity_id, y solo hay 1 lámpara instalada, la usamos
+    # If neither a MAC nor an entity_id was given and only one lamp is installed, use it
     if not target_mac:
         runtime_entries = [
             runtime_data.mac_address
@@ -159,55 +159,55 @@ def _obtener_mac_destino(hass: HomeAssistant, call_data: dict) -> str | None:
 
 
 async def async_setup_services(hass: HomeAssistant) -> None:
-    """Registra los servicios de la integración."""
+    """Register the integration's services."""
     if hass.services.has_service(DOMAIN, "send_command"):
         return
 
     async def handle_send_command(call: ServiceCall) -> None:
-        """Envía un comando de texto crudo directamente a la lámpara."""
+        """Send a raw text command directly to the lamp."""
         command = call.data.get("command")
-        target_mac = _obtener_mac_destino(hass, call.data)
+        target_mac = _get_target_mac(hass, call.data)
 
         if not target_mac:
-            _LOGGER.error("Twinstar (send_command): No se encontró la lámpara destino.")
+            _LOGGER.error("Twinstar (send_command): Target lamp not found.")
             return
 
         ble_client_for_target = _get_ble_client_for_mac(hass, target_mac)
         if not ble_client_for_target:
             _LOGGER.error(
-                "Twinstar (send_command): No hay cliente BLE para MAC %s", target_mac
+                "Twinstar (send_command): No BLE client for MAC %s", target_mac
             )
             return
 
         try:
             success = await ble_client_for_target.send_command(command)
             if success:
-                _LOGGER.info("Twinstar: Comando '%s' enviado a MAC: %s", command, target_mac)
+                _LOGGER.info("Twinstar: Command '%s' sent to MAC: %s", command, target_mac)
                 _update_light_state_from_command(hass, target_mac, command)
         except Exception as e:
-            _LOGGER.error("Error enviando comando a %s: %s", target_mac, e)
+            _LOGGER.error("Error sending command to %s: %s", target_mac, e)
 
     async def handle_send_sequence(call: ServiceCall) -> None:
-        """Envía múltiples comandos en una sola conexión BLE."""
+        """Send multiple commands over a single BLE connection."""
         commands = call.data.get("commands", [])
         delay = call.data.get("delay", 1)
-        target_mac = _obtener_mac_destino(hass, call.data)
+        target_mac = _get_target_mac(hass, call.data)
 
         if not target_mac:
-            _LOGGER.error("Twinstar (send_sequence): No se encontró la lámpara destino.")
+            _LOGGER.error("Twinstar (send_sequence): Target lamp not found.")
             return
 
         ble_client_for_target = _get_ble_client_for_mac(hass, target_mac)
         if not ble_client_for_target:
             _LOGGER.error(
-                "Twinstar (send_sequence): No hay cliente BLE para MAC %s", target_mac
+                "Twinstar (send_sequence): No BLE client for MAC %s", target_mac
             )
             return
 
         try:
             success = await ble_client_for_target.send_commands(commands, delay=delay)
             if success:
-                # Determinar el estado final de la luz a partir del último comando relevante
+                # Work out the light's final state from the last relevant command
                 last_state = None
                 for cmd in commands:
                     parsed = _parse_light_on_state(cmd)
@@ -218,19 +218,19 @@ async def async_setup_services(hass: HomeAssistant) -> None:
                     if entity is not None:
                         entity.set_is_on(last_state)
         except Exception as e:
-            _LOGGER.error("Error enviando secuencia a %s: %s", target_mac, e)
+            _LOGGER.error("Error sending sequence to %s: %s", target_mac, e)
 
     async def handle_set_schedule(call: ServiceCall) -> None:
-        """Programa las horas de encendido, apagado y duraciones de rampa en el controlador."""
-        target_mac = _obtener_mac_destino(hass, call.data)
+        """Program the on/off times and ramp durations into the controller."""
+        target_mac = _get_target_mac(hass, call.data)
         if not target_mac:
-            _LOGGER.error("Twinstar (set_schedule): No se encontró la lámpara destino.")
+            _LOGGER.error("Twinstar (set_schedule): Target lamp not found.")
             return
 
         ble_client_for_target = _get_ble_client_for_mac(hass, target_mac)
         if not ble_client_for_target:
             _LOGGER.error(
-                "Twinstar (set_schedule): No hay cliente BLE para MAC %s", target_mac
+                "Twinstar (set_schedule): No BLE client for MAC %s", target_mac
             )
             return
 
@@ -250,7 +250,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
                 sunset_minutes=sunset_minutes,
             )
         except Exception as e:
-            _LOGGER.error("Error programando horario en %s: %s", target_mac, e)
+            _LOGGER.error("Error programming schedule on %s: %s", target_mac, e)
 
     hass.services.async_register(DOMAIN, "send_command", handle_send_command)
     hass.services.async_register(DOMAIN, "send_sequence", handle_send_sequence)
@@ -258,7 +258,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: TwinstarConfigEntry) -> bool:
-    """Configura Twinstar desde una entrada de configuración."""
+    """Set up Twinstar from a config entry."""
     mac_address = entry.data.get(CONF_MAC)
     ble_client = TwinstarBLEClient(hass, mac_address)
 
@@ -269,48 +269,48 @@ async def async_setup_entry(hass: HomeAssistant, entry: TwinstarConfigEntry) -> 
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-    # Configuramos los servicios una sola vez
+    # Set up the services only once
     await async_setup_services(hass)
 
-    # Registramos el observador BLE para sincronización automática tras reinicio/corte de luz
+    # Register the BLE listener for automatic resync after a restart or power outage
     _setup_bluetooth_recovery_listener(hass, entry)
 
-    # Configurar consulta periódica de estado configurable para reflejar temporizadores de hardware
+    # Set up configurable periodic status polling to reflect hardware timers
     _setup_periodic_status_poll(hass, entry)
 
-    # Registrar listener para cuando el usuario cambie las opciones (ej. intervalo)
+    # Register a listener for when the user changes the options (e.g. interval)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     return True
 
 
 async def async_reload_entry(hass: HomeAssistant, entry: TwinstarConfigEntry) -> None:
-    """Recargar la integración al cambiar las opciones."""
+    """Reload the integration when the options change."""
     await hass.config_entries.async_reload(entry.entry_id)
 
 
 def _setup_bluetooth_recovery_listener(
     hass: HomeAssistant, entry: TwinstarConfigEntry
 ) -> None:
-    """Registra un observador BLE para resincronizar el reloj RTC y horario tras un corte de luz o arranque."""
+    """Register a BLE listener to resync the RTC clock and schedule after a power outage or startup."""
     runtime_data = entry.runtime_data
     mac_address = runtime_data.mac_address
     ble_client = runtime_data.ble_client
 
     async def _async_recover_schedule() -> None:
-        """Tarea en segundo plano que espera a que la radio esté estable y envía la programación."""
+        """Background task that waits for the radio to settle, then sends the schedule."""
         try:
             runtime_data.recovering = True
             _LOGGER.info(
-                "Twinstar (%s): Esperando 5s para estabilizar la radio BLE y resincronizar horario/reloj tras recuperación...",
+                "Twinstar (%s): Waiting 5s for the BLE radio to settle before resyncing schedule/clock after recovery...",
                 mac_address,
             )
             await asyncio.sleep(5)
 
-            # 1. Sincronizar reloj RTC y horario del temporizador
+            # 1. Sync the RTC clock and timer schedule
             await async_send_schedule_command(hass, mac_address, ble_client)
 
-            # 2. Restaurar niveles de color (RGBW + Brillo) en los registros del controlador
+            # 2. Restore the color levels (RGBW + brightness) in the controller's registers
             light_entity = runtime_data.entities.get(mac_address)
             if light_entity and hasattr(light_entity, "_build_color_commands"):
                 commands = light_entity._build_color_commands()
@@ -318,13 +318,13 @@ def _setup_bluetooth_recovery_listener(
                     if light_entity.is_on:
                         commands.append(CMD_ON)
                         _LOGGER.info(
-                            "Twinstar (%s): El acuario constaba ENCENDIDO. Restaurando color RGBW y estado ON.",
+                            "Twinstar (%s): Aquarium was recorded as ON. Restoring RGBW color and ON state.",
                             mac_address,
                         )
                     else:
                         commands.append(CMD_OFF)
                         _LOGGER.info(
-                            "Twinstar (%s): El acuario constaba APAGADO. Grabando color RGBW en memoria y manteniendo OFF.",
+                            "Twinstar (%s): Aquarium was recorded as OFF. Writing RGBW color to memory and staying OFF.",
                             mac_address,
                         )
                     await ble_client.send_commands(commands)
@@ -333,12 +333,12 @@ def _setup_bluetooth_recovery_listener(
                 await light_entity.async_update_power_status()
 
             _LOGGER.info(
-                "Twinstar (%s): Sincronización automática de recuperación (RTC + horario + estado) completada con éxito.",
+                "Twinstar (%s): Automatic recovery sync (RTC + schedule + state) completed successfully.",
                 mac_address,
             )
         except Exception as err:
             _LOGGER.error(
-                "Twinstar (%s): Error en la sincronización automática de recuperación: %s",
+                "Twinstar (%s): Error during automatic recovery sync: %s",
                 mac_address,
                 err,
             )
@@ -349,7 +349,7 @@ def _setup_bluetooth_recovery_listener(
         service_info: BluetoothServiceInfoBleak,
         change: BluetoothChange,
     ) -> None:
-        """Se ejecuta cada vez que HA detecta un anuncio BLE del dispositivo."""
+        """Runs every time HA sees a BLE advertisement from the device."""
         if change != BluetoothChange.ADVERTISEMENT:
             return
 
@@ -357,14 +357,14 @@ def _setup_bluetooth_recovery_listener(
         time_since_last = now - runtime_data.last_advertisement_time
         runtime_data.last_advertisement_time = now
 
-        # Si aún no está sincronizado en este ciclo o si transcurrieron más de 60s sin anuncios (corte de luz/pérdida)
+        # If not yet synced this cycle, or more than 60s passed without advertisements (power outage/signal loss)
         if not runtime_data.has_synced_after_recovery or time_since_last > 60:
             runtime_data.has_synced_after_recovery = True
             if not runtime_data.recovering:
                 _LOGGER.info(
-                    "Twinstar (%s): Detectada señal BLE tras %s. Iniciando recuperación automática...",
+                    "Twinstar (%s): BLE signal detected after %s. Starting automatic recovery...",
                     mac_address,
-                    "arranque" if time_since_last > 100000 else f"{time_since_last:.0f}s sin señal",
+                    "startup" if time_since_last > 100000 else f"{time_since_last:.0f}s without signal",
                 )
                 hass.async_create_background_task(
                     _async_recover_schedule(),
@@ -383,7 +383,7 @@ def _setup_bluetooth_recovery_listener(
 def _setup_periodic_status_poll(
     hass: HomeAssistant, entry: TwinstarConfigEntry
 ) -> None:
-    """Programa una consulta periódica al hardware para detectar cambios automáticos de estado."""
+    """Schedule periodic hardware polling to detect automatic state changes."""
     from .const import CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL
     
     runtime_data = entry.runtime_data
@@ -403,10 +403,10 @@ def _setup_periodic_status_poll(
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: TwinstarConfigEntry) -> bool:
-    """Descarga la integración y limpia servicios si no quedan entradas."""
+    """Unload the integration and remove services if no entries remain."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
-    # Si no quedan más entradas cargadas, eliminamos los servicios
+    # If no other loaded entries remain, remove the services
     remaining = [
         e
         for e in hass.config_entries.async_entries(DOMAIN)

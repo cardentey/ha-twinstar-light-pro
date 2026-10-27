@@ -33,10 +33,107 @@
       }
     }
   },
+  "device": {
+    "aquarium": {
+      "name": "Twinstar Aquarium ({mac})"
+    }
+  },
+  "entity": {
+    "button": {
+      "sync_clock": {
+        "name": "Sync clock"
+      }
+    },
+    "number": {
+      "brightness": {
+        "name": "Overall brightness"
+      },
+      "red": {
+        "name": "Red"
+      },
+      "green": {
+        "name": "Green"
+      },
+      "blue": {
+        "name": "Blue"
+      },
+      "white": {
+        "name": "Plant growth (white)"
+      },
+      "sunrise_minutes": {
+        "name": "Sunrise (minutes)"
+      },
+      "sunset_minutes": {
+        "name": "Sunset (minutes)"
+      }
+    },
+    "time": {
+      "start_time": {
+        "name": "On time"
+      },
+      "end_time": {
+        "name": "Off time"
+      }
+    }
+  },
   "services": {
+    "send_command": {
+      "name": "Send Bluetooth command",
+      "description": "Send a command directly to the Twinstar lamp.",
+      "fields": {
+        "entity_id": {
+          "name": "Twinstar lamp",
+          "description": "Select the light to send the command to."
+        },
+        "command": {
+          "name": "Command",
+          "description": "Example: A50, R100, W20"
+        }
+      }
+    },
+    "send_sequence": {
+      "name": "Send command sequence",
+      "description": "Send a list of commands with a pause between each.",
+      "fields": {
+        "entity_id": {
+          "name": "Twinstar lamp",
+          "description": "Select the target light."
+        },
+        "commands": {
+          "name": "Commands",
+          "description": "List of commands to send (e.g. ['R100', 'G0', 'B0'])."
+        },
+        "delay": {
+          "name": "Delay (seconds)",
+          "description": "Wait time between commands (default: 1)."
+        }
+      }
+    },
     "set_schedule": {
-      "name": "Program Schedule in Controller",
-      "description": "Programs start/end times and sunrise/sunset durations natively into the Twinstar lamp memory."
+      "name": "Program schedule on the controller",
+      "description": "Program the on/off times and ramp durations (sunrise/sunset) natively into the Twinstar lamp's hardware.",
+      "fields": {
+        "entity_id": {
+          "name": "Twinstar lamp",
+          "description": "Select the target light."
+        },
+        "start_time": {
+          "name": "On time",
+          "description": "Time in HH:MM format (example: '09:00')."
+        },
+        "end_time": {
+          "name": "Off time",
+          "description": "Time in HH:MM format (example: '21:00')."
+        },
+        "sunrise_minutes": {
+          "name": "Sunrise minutes",
+          "description": "Ramp-up duration when turning on, in minutes (0-60)."
+        },
+        "sunset_minutes": {
+          "name": "Sunset minutes",
+          "description": "Ramp-down duration when turning off, in minutes (0-60)."
+        }
+      }
     }
   }
 }

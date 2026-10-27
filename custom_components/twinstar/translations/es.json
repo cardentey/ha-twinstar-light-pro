@@ -33,10 +33,107 @@
       }
     }
   },
+  "device": {
+    "aquarium": {
+      "name": "Acuario Twinstar ({mac})"
+    }
+  },
+  "entity": {
+    "button": {
+      "sync_clock": {
+        "name": "Sincronizar reloj"
+      }
+    },
+    "number": {
+      "brightness": {
+        "name": "Brillo general"
+      },
+      "red": {
+        "name": "Rojo"
+      },
+      "green": {
+        "name": "Verde"
+      },
+      "blue": {
+        "name": "Azul"
+      },
+      "white": {
+        "name": "Cultivo (blanco)"
+      },
+      "sunrise_minutes": {
+        "name": "Amanecer (minutos)"
+      },
+      "sunset_minutes": {
+        "name": "Atardecer (minutos)"
+      }
+    },
+    "time": {
+      "start_time": {
+        "name": "Hora de encendido"
+      },
+      "end_time": {
+        "name": "Hora de apagado"
+      }
+    }
+  },
   "services": {
+    "send_command": {
+      "name": "Enviar comando Bluetooth",
+      "description": "Envía un comando directamente a la lámpara Twinstar.",
+      "fields": {
+        "entity_id": {
+          "name": "Lámpara Twinstar",
+          "description": "Selecciona la luz a la que quieres enviar el comando."
+        },
+        "command": {
+          "name": "Comando",
+          "description": "Ejemplo: A50, R100, W20"
+        }
+      }
+    },
+    "send_sequence": {
+      "name": "Enviar secuencia de comandos",
+      "description": "Envía una lista de comandos con una pausa entre ellos.",
+      "fields": {
+        "entity_id": {
+          "name": "Lámpara Twinstar",
+          "description": "Selecciona la luz destino."
+        },
+        "commands": {
+          "name": "Comandos",
+          "description": "Lista de comandos a enviar (Ej: ['R100', 'G0', 'B0'])."
+        },
+        "delay": {
+          "name": "Retraso (segundos)",
+          "description": "Tiempo de espera entre comandos (Por defecto: 1)."
+        }
+      }
+    },
     "set_schedule": {
-      "name": "Programar Horario en el Controlador",
-      "description": "Programa el horario de encendido, apagado y duraciones de amanecer/atardecer nativamente en la memoria de la lámpara Twinstar."
+      "name": "Programar horario en el controlador",
+      "description": "Programa las horas de encendido y apagado, y las duraciones de rampa (amanecer/atardecer) nativamente en el hardware de la lámpara Twinstar.",
+      "fields": {
+        "entity_id": {
+          "name": "Lámpara Twinstar",
+          "description": "Selecciona la luz destino."
+        },
+        "start_time": {
+          "name": "Hora de encendido",
+          "description": "Hora en formato HH:MM (Ejemplo: '09:00')."
+        },
+        "end_time": {
+          "name": "Hora de apagado",
+          "description": "Hora en formato HH:MM (Ejemplo: '21:00')."
+        },
+        "sunrise_minutes": {
+          "name": "Minutos de amanecer",
+          "description": "Duración de la rampa al encender en minutos (0-60)."
+        },
+        "sunset_minutes": {
+          "name": "Minutos de atardecer",
+          "description": "Duración de la rampa al apagar en minutos (0-60)."
+        }
+      }
     }
   }
 }

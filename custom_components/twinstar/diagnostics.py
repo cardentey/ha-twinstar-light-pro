@@ -1,4 +1,4 @@
-"""Diagnostics para Twinstar."""
+"""Diagnostics for Twinstar."""
 from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntry
@@ -10,7 +10,7 @@ from .const import CONF_MAC, PLATFORMS
 async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> dict:
-    """Retorna información diagnóstica de la integración."""
+    """Return diagnostic information for the integration."""
     return {
         "mac_address": entry.data.get(CONF_MAC, "N/A"),
         "platforms": PLATFORMS,

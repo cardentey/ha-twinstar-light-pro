@@ -1,24 +1,139 @@
 {
+  "title": "Twinstar Aquarium Light",
   "config": {
     "step": {
       "user": {
-        "title": "Añadir Acuario Twinstar",
-        "description": "Introduce la dirección MAC de tu lámpara Twinstar.",
+        "title": "Set up Twinstar",
+        "description": "Enter the Bluetooth MAC address of your Twinstar lamp.",
         "data": {
-          "mac_address": "Dirección MAC (Ej: 50:78:7D:XX:XX:XX)"
+          "mac_address": "MAC Address (e.g. 50:78:7D:XX:XX:XX)"
         }
       },
       "bluetooth_confirm": {
-        "title": "¡Twinstar encontrada!",
-        "description": "Se ha detectado la lámpara **{name}** con MAC `{mac}`. ¿Quieres configurarla?"
+        "title": "Twinstar found!",
+        "description": "A lamp **{name}** with MAC `{mac}` was discovered via Bluetooth. Would you like to set it up?"
       }
     },
     "error": {
-      "invalid_mac": "La dirección MAC no es válida. Usa el formato XX:XX:XX:XX:XX:XX."
+      "invalid_mac": "Invalid MAC address. Use the format XX:XX:XX:XX:XX:XX."
     },
     "abort": {
-      "already_configured": "Este dispositivo ya está configurado.",
-      "not_twinstar_pro": "El dispositivo detectado no es una Twinstar Light Pro."
+      "already_configured": "This device is already configured.",
+      "not_twinstar_pro": "The detected device is not a Twinstar Light Pro."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Twinstar Options",
+        "description": "Configure the polling frequency to read the actual controller state.",
+        "data": {
+          "poll_interval": "Polling interval (minutes)"
+        }
+      }
+    }
+  },
+  "device": {
+    "aquarium": {
+      "name": "Twinstar Aquarium ({mac})"
+    }
+  },
+  "entity": {
+    "button": {
+      "sync_clock": {
+        "name": "Sync clock"
+      }
+    },
+    "number": {
+      "brightness": {
+        "name": "Overall brightness"
+      },
+      "red": {
+        "name": "Red"
+      },
+      "green": {
+        "name": "Green"
+      },
+      "blue": {
+        "name": "Blue"
+      },
+      "white": {
+        "name": "Plant growth (white)"
+      },
+      "sunrise_minutes": {
+        "name": "Sunrise (minutes)"
+      },
+      "sunset_minutes": {
+        "name": "Sunset (minutes)"
+      }
+    },
+    "time": {
+      "start_time": {
+        "name": "On time"
+      },
+      "end_time": {
+        "name": "Off time"
+      }
+    }
+  },
+  "services": {
+    "send_command": {
+      "name": "Send Bluetooth command",
+      "description": "Send a command directly to the Twinstar lamp.",
+      "fields": {
+        "entity_id": {
+          "name": "Twinstar lamp",
+          "description": "Select the light to send the command to."
+        },
+        "command": {
+          "name": "Command",
+          "description": "Example: A50, R100, W20"
+        }
+      }
+    },
+    "send_sequence": {
+      "name": "Send command sequence",
+      "description": "Send a list of commands with a pause between each.",
+      "fields": {
+        "entity_id": {
+          "name": "Twinstar lamp",
+          "description": "Select the target light."
+        },
+        "commands": {
+          "name": "Commands",
+          "description": "List of commands to send (e.g. ['R100', 'G0', 'B0'])."
+        },
+        "delay": {
+          "name": "Delay (seconds)",
+          "description": "Wait time between commands (default: 1)."
+        }
+      }
+    },
+    "set_schedule": {
+      "name": "Program schedule on the controller",
+      "description": "Program the on/off times and ramp durations (sunrise/sunset) natively into the Twinstar lamp's hardware.",
+      "fields": {
+        "entity_id": {
+          "name": "Twinstar lamp",
+          "description": "Select the target light."
+        },
+        "start_time": {
+          "name": "On time",
+          "description": "Time in HH:MM format (example: '09:00')."
+        },
+        "end_time": {
+          "name": "Off time",
+          "description": "Time in HH:MM format (example: '21:00')."
+        },
+        "sunrise_minutes": {
+          "name": "Sunrise minutes",
+          "description": "Ramp-up duration when turning on, in minutes (0-60)."
+        },
+        "sunset_minutes": {
+          "name": "Sunset minutes",
+          "description": "Ramp-down duration when turning off, in minutes (0-60)."
+        }
+      }
     }
   }
 }

@@ -1,43 +1,29 @@
 send_command:
-  name: "Enviar Comando Bluetooth"
-  description: "Envía un comando directamente a la lámpara Twinstar."
   fields:
     entity_id:
-      name: "Lámpara Twinstar"
-      description: "Selecciona la luz a la que quieres enviar el comando."
       required: false
       selector:
         entity:
           domain: light
           integration: twinstar
     command:
-      name: "Comando"
-      description: "Ejemplo: A50, R100, W20"
       required: true
       selector:
         text:
 
 send_sequence:
-  name: "Enviar Secuencia de Comandos"
-  description: "Envía una lista de comandos con una pausa entre ellos."
   fields:
     entity_id:
-      name: "Lámpara Twinstar"
-      description: "Selecciona la luz destino."
       required: false
       selector:
         entity:
           domain: light
           integration: twinstar
     commands:
-      name: "Comandos"
-      description: "Lista de comandos a enviar (Ej: ['R100', 'G0', 'B0'])."
       required: true
       selector:
         object:
     delay:
-      name: "Retraso (Segundos)"
-      description: "Tiempo de espera entre comandos (Por defecto: 1)."
       default: 1
       required: false
       selector:
@@ -47,32 +33,22 @@ send_sequence:
           step: 0.1
 
 set_schedule:
-  name: "Programar Horario en el Controlador"
-  description: "Programa las horas de encendido y apagado, y las duraciones de rampa (amanecer/atardecer) nativamente en el hardware de la lámpara Twinstar."
   fields:
     entity_id:
-      name: "Lámpara Twinstar"
-      description: "Selecciona la luz destino."
       required: false
       selector:
         entity:
           domain: light
           integration: twinstar
     start_time:
-      name: "Hora de Encendido"
-      description: "Hora en formato HH:MM (Ejemplo: '09:00')."
       required: true
       selector:
         time:
     end_time:
-      name: "Hora de Apagado"
-      description: "Hora en formato HH:MM (Ejemplo: '21:00')."
       required: true
       selector:
         time:
     sunrise_minutes:
-      name: "Minutos de Amanecer"
-      description: "Duración de la rampa al encender en minutos (0-60)."
       default: 30
       required: false
       selector:
@@ -81,8 +57,6 @@ set_schedule:
           max: 60
           step: 1
     sunset_minutes:
-      name: "Minutos de Atardecer"
-      description: "Duración de la rampa al apagar en minutos (0-60)."
       default: 30
       required: false
       selector:

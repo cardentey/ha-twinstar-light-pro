@@ -1,4 +1,4 @@
-"""Funcionalidad compartida para programar el horario y sincronizar el reloj BLE en Twinstar."""
+"""Shared helpers to program the schedule and sync the BLE clock on Twinstar."""
 from __future__ import annotations
 
 import logging
@@ -20,22 +20,22 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_sync_clock(ble_client: TwinstarBLEClient) -> bool:
-    """Sincroniza el reloj interno del controlador Twinstar con la hora actual de HA.
+    """Sync the Twinstar controller's internal clock to HA's current time.
 
-    Envía una cadena ASCII de 14 dígitos con el formato 'YYYYMMDDHHMMSS'
-    (ejemplo: '20260801132242').
+    Sends a 14-digit ASCII string in the format 'YYYYMMDDHHMMSS'
+    (example: '20260801132242').
     """
     now_str = datetime.now().strftime("%Y%m%d%H%M%S")
     success = await ble_client.send_command(now_str)
     if success:
         _LOGGER.info(
-            "Twinstar (%s): Reloj interno sincronizado correctamente -> %s",
+            "Twinstar (%s): Internal clock synced successfully -> %s",
             ble_client.mac_address,
             now_str,
         )
     else:
         _LOGGER.error(
-            "Twinstar (%s): Error al sincronizar el reloj interno (%s)",
+            "Twinstar (%s): Error syncing the internal clock (%s)",
             ble_client.mac_address,
             now_str,
         )
@@ -43,7 +43,7 @@ async def async_sync_clock(ble_client: TwinstarBLEClient) -> bool:
 
 
 def _format_hhmm(val: str | None, default_time: str) -> str:
-    """Extrae 4 dígitos HHMM de una cadena de hora (ej: '09:00:00' -> '0900')."""
+    """Extract 4 HHMM digits from a time string (e.g. '09:00:00' -> '0900')."""
     raw = str(val or default_time).replace(":", "")
     digits = "".join(c for c in raw if c.isdigit())
     if len(digits) >= 4:
@@ -52,7 +52,7 @@ def _format_hhmm(val: str | None, default_time: str) -> str:
 
 
 def _format_minutes(val: int | float | str | None, default_min: int) -> str:
-    """Convierte un valor de minutos de rampa a formato entero (ej: 30 -> '30')."""
+    """Convert a ramp minutes value to integer format (e.g. 30 -> '30')."""
     try:
         min_int = int(float(val)) if val is not None else default_min
         min_int = max(0, min(60, min_int))
@@ -71,13 +71,13 @@ async def async_send_schedule_command(
     sunset_minutes: int | None = None,
     sync_clock_first: bool = True,
 ) -> bool:
-    """Construye y envía el comando de programación de horario al controlador Twinstar.
+    """Build and send the schedule command to the Twinstar controller.
 
-    Formato: TOn:[Hora_Encendido]_[Hora_Apagado]_[Minutos_Amanecer]_[Minutos_Atardecer]
-    Ejemplo: TOn:0900_2100_30_30
+    Format: TOn:[On_Time]_[Off_Time]_[Sunrise_Minutes]_[Sunset_Minutes]
+    Example: TOn:0900_2100_30_30
 
-    Si algún parámetro no se especifica, busca en Home Assistant el estado de las entidades
-    hermanas registradas en el dispositivo (o utiliza los valores por defecto).
+    Any parameter not given is looked up from the state of the sibling entities
+    registered on the device in Home Assistant (or falls back to the defaults).
     """
     if (
         start_time is None
@@ -124,13 +124,13 @@ async def async_send_schedule_command(
     success = await ble_client.send_command(command)
     if success:
         _LOGGER.info(
-            "Twinstar (%s): Horario programado en el controlador -> %s",
+            "Twinstar (%s): Schedule programmed on the controller -> %s",
             mac_address,
             command,
         )
     else:
         _LOGGER.error(
-            "Twinstar (%s): Error al programar el horario (%s)",
+            "Twinstar (%s): Error programming the schedule (%s)",
             mac_address,
             command,
         )

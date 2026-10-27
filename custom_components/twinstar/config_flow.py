@@ -1,4 +1,4 @@
-"""Config flow para Twinstar."""
+"""Config flow for Twinstar."""
 from __future__ import annotations
 
 import re
@@ -14,12 +14,12 @@ MAC_REGEX = re.compile(r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$")
 
 
 class TwinstarConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Maneja el flujo de configuración de Twinstar."""
+    """Handle the Twinstar config flow."""
 
     VERSION = 1
 
     async def async_step_user(self, user_input=None):
-        """Paso inicial cuando el usuario le da a añadir integración."""
+        """Initial step when the user clicks Add Integration."""
         errors = {}
 
         if user_input is not None:
@@ -47,32 +47,32 @@ class TwinstarConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user", data_schema=data_schema, errors=errors
         )
 
-    # --- Autodescubrimiento Bluetooth ---
+    # --- Bluetooth auto-discovery ---
 
     async def async_step_bluetooth(self, discovery_info: BluetoothServiceInfoBleak):
-        """Se activa automáticamente cuando HA detecta la lámpara en el aire."""
-        nombre_dispositivo = discovery_info.name or ""
+        """Triggered automatically when HA detects the lamp over the air."""
+        device_name = discovery_info.name or ""
 
-        # Filtro estricto: Si no es exactamente la Pro, lo ignoramos
-        if "twinstar light pro" not in nombre_dispositivo.lower():
+        # Strict filter: ignore anything that is not exactly the Pro
+        if "twinstar light pro" not in device_name.lower():
             return self.async_abort(reason="not_twinstar_pro")
 
-        # Comprobamos si ya lo teníamos instalado
+        # Check whether it is already installed
         await self.async_set_unique_id(discovery_info.address)
         self._abort_if_unique_id_configured()
 
-        # Guardamos los datos y lanzamos la ventanita
+        # Store the data and show the confirmation dialog
         self._discovery_info = discovery_info
         return await self.async_step_bluetooth_confirm()
 
     async def async_step_bluetooth_confirm(self, user_input=None):
-        """Muestra la ventanita diciendo: '¡Encontrada! ¿Quieres añadirla?'."""
+        """Show the dialog saying: 'Found it! Do you want to add it?'."""
         if user_input is not None:
             mac = self._discovery_info.address
-            nombre_sugerido = self._discovery_info.name or "Acuario Twinstar"
+            suggested_name = self._discovery_info.name or "Twinstar Aquarium"
 
             return self.async_create_entry(
-                title=f"{nombre_sugerido} ({mac[-5:]})",
+                title=f"{suggested_name} ({mac[-5:]})",
                 data={CONF_MAC: mac},
             )
 

@@ -4,91 +4,103 @@
 ![Bluetooth](https://img.shields.io/badge/Connectivity-BLE%20(USB%20or%20Proxy)-informational.svg)
 ![Model](https://img.shields.io/badge/Model-Twinstar%20Light%20Pro-green.svg)
 
-Esta integración personalizada permite controlar las pantallas LED **Twinstar Light Pro (RGBW)** directamente desde Home Assistant utilizando **Bluetooth Low Energy (BLE)**.
+This custom integration lets you control **Twinstar Light Pro (RGBW)** LED fixtures directly from Home Assistant using **Bluetooth Low Energy (BLE)**.
 
-La comunicación funciona con cualquier interfaz Bluetooth compatible con Home Assistant, incluyendo:
+Communication works with any Bluetooth interface supported by Home Assistant, including:
 
-- ✅ Adaptador Bluetooth USB.
-- ✅ Bluetooth integrado en el equipo donde se ejecuta Home Assistant (Raspberry Pi, NUC, etc.).
-- ✅ ESPHome Bluetooth Proxy (recomendado para mejorar el alcance y la estabilidad de la conexión).
+- ✅ USB Bluetooth adapter.
+- ✅ Built-in Bluetooth on the machine running Home Assistant (Raspberry Pi, NUC, etc.).
+- ✅ ESPHome Bluetooth Proxy (recommended for better range and connection stability).
 
 ---
 
-# 📦 Compatibilidad
+# 📦 Compatibility
 
-## Probada con
+## Tested with
 
 - Twinstar V 600S
 
-Es posible que también sea compatible con otros modelos **Twinstar Light Pro**, aunque no han sido verificados.
+It may also work with other **Twinstar Light Pro** models, but they have not been verified.
 
 ---
 
-# 📋 Requerimientos
+# 📋 Requirements
 
 - Home Assistant.
-- Bluetooth disponible en Home Assistant mediante cualquiera de estas opciones:
-  - Adaptador Bluetooth USB.
-  - Bluetooth integrado.
-  - ESPHome Bluetooth Proxy (recomendado).
+- Bluetooth available in Home Assistant through any of these options:
+  - USB Bluetooth adapter.
+  - Built-in Bluetooth.
+  - ESPHome Bluetooth Proxy (recommended).
 
 ---
 
-# ✨ Características
+# ✨ Features
 
 <p align="center">
   <img src="/IMG_7726.PNG" alt="Twinstar Dashboard" width="400">
 </p>
 
-- **Autodescubrimiento Bluetooth:** Detecta automáticamente nuevas lámparas Twinstar Light Pro cercanas.
-- **Soporte Multi-dispositivo:** Control independiente de múltiples acuarios.
-- **Control de Canales Individuales:** Entidades `number` para ajustar Rojo, Verde, Azul, Blanco y Brillo General (0–100%).
-- **Temporizador en Hardware:** Configuración del amanecer, atardecer y horarios directamente en la memoria del controlador (`TOn:HHMM_HHMM_MM_MM`).
-- **Sincronización del reloj:** Ajuste automático del RTC del controlador (`YYYYMMDDHHMMSS`) y botón manual `button.twinstar_sincronizar_reloj`.
-- **Persistencia del estado:** Restauración automática de todos los valores tras reiniciar Home Assistant.
-- **Servicios avanzados:**
+- **Bluetooth auto-discovery:** Automatically detects new Twinstar Light Pro lamps nearby.
+- **Multi-device support:** Independent control of multiple aquariums.
+- **Individual channel control:** `number` entities to adjust Red, Green, Blue, White and Overall Brightness (0–100%).
+- **Hardware timer:** Sunrise, sunset and schedule configured directly in the controller's memory (`TOn:HHMM_HHMM_MM_MM`).
+- **Clock sync:** Automatic adjustment of the controller's RTC (`YYYYMMDDHHMMSS`) and a manual **Sync clock** button.
+- **State persistence:** All values are restored automatically after Home Assistant restarts.
+- **Advanced services:**
   - `set_schedule`
   - `send_command`
   - `send_sequence`
-- **Conexión robusta:** Utiliza `bleak-retry-connector` para minimizar desconexiones y mejorar la estabilidad de la comunicación Bluetooth.
+- **Robust connection:** Uses `bleak-retry-connector` to minimize disconnects and improve Bluetooth stability.
 
 ---
 
-# 🛠️ Instalación
+# 🌐 Languages
 
-## Instalación manual
+The integration uses Home Assistant's built-in translation system. It currently ships in **English** and **Spanish**.
 
-1. Descarga el contenido de la carpeta:
+- **Device and entity names** follow the Home Assistant system language (**Settings → System → General → Language**). Entity IDs are generated from the name in that language when the device is first added, and do not change afterwards.
+- **Setup dialogs, options and service (action) descriptions** follow each user's own language (**Profile → Language**).
+- Log messages are in English, following Home Assistant convention.
+
+To add a language, copy `custom_components/twinstar/translations/en.json` to `<language code>.json` (for example `de.json`) and translate the values. Keep the keys unchanged.
+
+---
+
+# 🛠️ Installation
+
+## Manual installation
+
+1. Download the contents of the folder:
 
 ```
 custom_components/twinstar
 ```
 
-2. Copia la carpeta en:
+2. Copy the folder to:
 
 ```
 /config/custom_components/twinstar
 ```
 
-3. Reinicia Home Assistant.
+3. Restart Home Assistant.
 
 ---
 
-# ⚙️ Configuración
+# ⚙️ Configuration
 
-## Autodescubrimiento
+## Auto-discovery
 
-La integración utiliza la infraestructura Bluetooth de Home Assistant.
+The integration uses Home Assistant's Bluetooth infrastructure.
 
-Si Home Assistant puede comunicarse con la lámpara mediante cualquiera de estos métodos:
+If Home Assistant can communicate with the lamp through any of these methods:
 
-- Adaptador Bluetooth USB
-- Bluetooth integrado
+- USB Bluetooth adapter
+- Built-in Bluetooth
 - ESPHome Bluetooth Proxy
 
-aparecerá automáticamente una notificación de **"Nuevo dispositivo descubierto"**.
+a **"New device discovered"** notification will appear automatically.
 
-### Arquitectura de conexión
+### Connection architecture
 
 ```text
                  Home Assistant
@@ -106,108 +118,108 @@ aparecerá automáticamente una notificación de **"Nuevo dispositivo descubiert
 
 ---
 
-## Configuración manual
+## Manual configuration
 
-Si el dispositivo no aparece automáticamente:
+If the device does not appear automatically:
 
-1. Ve a **Ajustes → Dispositivos y Servicios**.
-2. Pulsa **Añadir integración**.
-3. Busca **Twinstar**.
-4. Introduce la dirección MAC de la lámpara.
+1. Go to **Settings → Devices & Services**.
+2. Click **Add Integration**.
+3. Search for **Twinstar**.
+4. Enter the lamp's MAC address.
 
 ---
 
-# ⏱️ Programación nativa en el controlador
+# ⏱️ Native controller scheduling
 
-La integración configura directamente el temporizador interno y el reloj (RTC) del controlador Twinstar, evitando depender de automatizaciones externas.
+The integration configures the Twinstar controller's internal timer and clock (RTC) directly, so it does not depend on external automations.
 
-### Funciones disponibles
+### Available functions
 
-- **Hora de encendido y apagado (`time`)**
-  - Entidades de tipo `time` para configurar el horario diario.
+- **On and off times (`time`)**
+  - `time` entities to configure the daily schedule.
 
-- **Duración del amanecer y atardecer (`number`)**
-  - Ajuste entre **0 y 60 minutos** para realizar transiciones suaves.
+- **Sunrise and sunset duration (`number`)**
+  - Adjustable between **0 and 60 minutes** for smooth transitions.
 
-- **Resiliencia ante cortes eléctricos**
-  - La integración monitoriza continuamente la conexión BLE.
-  - Tras un reinicio de Home Assistant o un corte de alimentación superior a 60 segundos:
-    - Resincroniza el reloj RTC.
-    - Restaura automáticamente la programación.
-    - Recupera los niveles RGBW y el brillo almacenados.
-    - Mantiene la pantalla apagada si corresponde al horario nocturno.
+- **Power outage resilience**
+  - The integration continuously monitors the BLE connection.
+  - After a Home Assistant restart or a power outage longer than 60 seconds, it:
+    - Resyncs the RTC clock.
+    - Restores the schedule automatically.
+    - Restores the stored RGBW and brightness levels.
+    - Keeps the light off if it is within the night-time schedule.
 
-- **Sincronización inteligente del estado**
-  - Al iniciar Home Assistant, después de una recuperación y cada 5 minutos (configurable), se envía el comando:
+- **Smart state sync**
+  - On Home Assistant startup, after a recovery, and every 5 minutes (configurable), it sends the command:
 
 ```
 powerstatus
 ```
 
-- El controlador responde mediante:
+- The controller responds via:
 
 ```
 WRITE_UUID: 0xdead
 READ_UUID:  0xfef4
 ```
 
-De este modo, si el temporizador interno enciende o apaga la pantalla, Home Assistant refleja siempre el estado real del dispositivo.
+This way, if the internal timer turns the light on or off, Home Assistant always reflects the device's real state.
 
 ---
 
-# 💡 Servicios (Actions)
+# 💡 Services (Actions)
 
 ## `twinstar.set_schedule`
 
-Programa el horario directamente en el controlador.
+Programs the schedule directly into the controller.
 
-### Parámetros
+### Parameters
 
-| Parámetro | Descripción |
+| Parameter | Description |
 |-----------|-------------|
-| `entity_id` | Lámpara destino |
-| `start_time` | Hora de encendido (ej. `09:00`) |
-| `end_time` | Hora de apagado (ej. `21:00`) |
-| `sunrise_minutes` | Duración del amanecer (0–60) |
-| `sunset_minutes` | Duración del atardecer (0–60) |
+| `entity_id` | Target lamp |
+| `start_time` | On time (e.g. `09:00`) |
+| `end_time` | Off time (e.g. `21:00`) |
+| `sunrise_minutes` | Sunrise duration (0–60) |
+| `sunset_minutes` | Sunset duration (0–60) |
 
 ---
 
 ## `twinstar.send_command`
 
-Envía un comando de texto directamente al controlador.
+Sends a text command directly to the controller.
 
-### Parámetros
+### Parameters
 
-| Parámetro | Descripción |
+| Parameter | Description |
 |-----------|-------------|
-| `entity_id` | Lámpara destino |
-| `command` | Comando de texto (ej. `A50`) |
+| `entity_id` | Target lamp |
+| `command` | Text command (e.g. `A50`) |
 
 ---
 
 ## `twinstar.send_sequence`
 
-Envía una secuencia de comandos con retardos configurables.
+Sends a sequence of commands with configurable delays.
 
-Ideal para:
+Ideal for:
 
-- Animaciones.
-- Efectos personalizados.
-- Automatizaciones avanzadas.
-
----
-
-# ⚠️ Aviso
-
-Esta integración **no es un producto oficial de Twinstar**.
-
-Ha sido desarrollada mediante ingeniería inversa con fines de interoperabilidad para la comunidad de acuariofilia.
-
-Utilízala bajo tu propia responsabilidad.
+- Animations.
+- Custom effects.
+- Advanced automations.
 
 ---
 
-# ❤️ Agradecimientos
+# ⚠️ Disclaimer
 
-Desarrollado para la comunidad de Home Assistant y los amantes de los acuarios plantados.
+This integration is **not an official Twinstar product**.
+
+It was developed through reverse engineering for interoperability purposes, for the aquarium hobbyist community.
+
+Use it at your own risk.
+
+---
+
+# ❤️ Acknowledgements
+
+Built for the Home Assistant community and planted aquarium enthusiasts.

@@ -1,4 +1,4 @@
-"""Entidades de hora para programar el temporizador de Twinstar."""
+"""Time entities to program the Twinstar timer."""
 from __future__ import annotations
 
 import logging
@@ -19,7 +19,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def _parse_time_str(time_str: str, default_val: time) -> time:
-    """Parsea una cadena de hora ISO ('HH:MM:SS' o 'HH:MM') a un objeto datetime.time."""
+    """Parse an ISO time string ('HH:MM:SS' or 'HH:MM') into a datetime.time object."""
     try:
         parts = time_str.split(":")
         if len(parts) >= 2:
@@ -32,7 +32,7 @@ def _parse_time_str(time_str: str, default_val: time) -> time:
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    """Configura las entidades de hora desde una entrada de configuración."""
+    """Set up the time entities from a config entry."""
     runtime_data = entry.runtime_data
     mac_address = runtime_data.mac_address
     ble_client = runtime_data.ble_client
@@ -46,12 +46,12 @@ async def async_setup_entry(
 
 
 class TwinstarTimeBase(TimeEntity, RestoreEntity):
-    """Clase base para entidades Time de Twinstar."""
+    """Base class for Twinstar time entities."""
 
     def __init__(
         self,
         mac_address: str,
-        name: str,
+        translation_key: str,
         unique_suffix: str,
         icon: str,
         default_time: str,
@@ -59,7 +59,8 @@ class TwinstarTimeBase(TimeEntity, RestoreEntity):
     ) -> None:
         self._mac = mac_address
         self._ble_client = ble_client
-        self._attr_name = f"Twinstar {name}"
+        self._attr_has_entity_name = True
+        self._attr_translation_key = translation_key
         self._attr_unique_id = f"twinstar_{mac_address}_{unique_suffix}"
         self._attr_icon = icon
         self._default_time_obj = _parse_time_str(default_time, time(9, 0))
@@ -67,42 +68,42 @@ class TwinstarTimeBase(TimeEntity, RestoreEntity):
 
     @property
     def device_info(self) -> DeviceInfo:
-        """Retorna información del dispositivo."""
+        """Return device info."""
         return get_device_info(self._mac)
 
     async def async_added_to_hass(self) -> None:
-        """Restaura la última hora configurada."""
+        """Restore the last configured time."""
         await super().async_added_to_hass()
         last_state = await self.async_get_last_state()
         if last_state and last_state.state not in ("unknown", "unavailable"):
             self._value = _parse_time_str(last_state.state, self._default_time_obj)
             _LOGGER.debug(
-                "Memoria restaurada: %s vuelve a %s",
-                self._attr_name,
+                "State restored: %s returns to %s",
+                self.entity_id,
                 self._value,
             )
 
     @property
     def native_value(self) -> time | None:
-        """Retorna la hora actual del selector."""
+        """Return the selector's current time."""
         return self._value
 
     async def async_set_value(self, value: time) -> None:
-        """Actualiza la hora e inyecta la nueva programación por BLE."""
+        """Update the time and push the new schedule over BLE."""
         self._value = value
         self.async_write_ha_state()
 
-        _LOGGER.debug("Nueva hora en %s: %s", self._attr_name, value)
+        _LOGGER.debug("New time for %s: %s", self.entity_id, value)
         await async_send_schedule_command(self.hass, self._mac, self._ble_client)
 
 
 class TwinstarStartTime(TwinstarTimeBase):
-    """Selector para la hora de encendido del acuario."""
+    """Selector for the aquarium's on time."""
 
     def __init__(self, mac_address: str, ble_client: TwinstarBLEClient) -> None:
         super().__init__(
             mac_address=mac_address,
-            name="Hora de Encendido",
+            translation_key="start_time",
             unique_suffix="start_time",
             icon="mdi:weather-sunset-up",
             default_time=DEFAULT_START_TIME,
@@ -111,12 +112,12 @@ class TwinstarStartTime(TwinstarTimeBase):
 
 
 class TwinstarEndTime(TwinstarTimeBase):
-    """Selector para la hora de apagado del acuario."""
+    """Selector for the aquarium's off time."""
 
     def __init__(self, mac_address: str, ble_client: TwinstarBLEClient) -> None:
         super().__init__(
             mac_address=mac_address,
-            name="Hora de Apagado",
+            translation_key="end_time",
             unique_suffix="end_time",
             icon="mdi:weather-sunset-down",
             default_time=DEFAULT_END_TIME,
